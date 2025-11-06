@@ -211,11 +211,13 @@ export async function createSession(name: string): Promise<WASocket> {
               message.pushName as any,
               !!message.key.fromMe,
               ppUrl,
-              senderPn?.slice(0, senderPn.indexOf("@")) ?? null
+              senderPn?.slice(0, senderPn.indexOf("@")) ?? null,
+              message.message?.extendedTextMessage?.contextInfo?.stanzaId ?? undefined
             );
 
             (payload as any).entry[0].changes[0].value.messages[0].type = "text";
             (payload as any).entry[0].changes[0].value.messages[0].text = { body: text };
+            (payload as any).entry[0].changes[0].value.messages[0].context = { id: message.message?.extendedTextMessage?.contextInfo?.stanzaId ?? undefined };
 
             axios
               .post(crmEndpoint, payload)

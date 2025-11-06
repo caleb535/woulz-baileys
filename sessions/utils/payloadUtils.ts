@@ -15,7 +15,8 @@ export function createBasePayload(
   pushName: string | undefined,
   fromMe: boolean,
   ppUrl: string | undefined,
-  senderPn: string | null
+  senderPn: string | null,
+  stanzaId: string | undefined
 ): WebhookPayload {
   return {
     object: "whatsapp_business_account",
@@ -48,6 +49,9 @@ export function createBasePayload(
                   type: "text",
                   text: { body: "" },
                   fromMe,
+                  context: {
+                    id: stanzaId,
+                  },
                 },
               ],
             },
