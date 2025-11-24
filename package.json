@@ -24,6 +24,7 @@
     "axios": "^1.6.8",
     "baileys": "github:WhiskeySockets/Baileys",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^4.18.2",
     "file-type": "^21.0.0",

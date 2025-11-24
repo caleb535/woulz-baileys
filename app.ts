@@ -4,6 +4,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import routes from "./api/routes.ts";
+import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,4 +30,6 @@ app.set("view engine", "ejs");
 app.use(express.json());
 app.use("/api", routes);
 
-app.listen(3002, () => console.log("API listening on port 3002"));
+app.listen(3002, () =>
+  console.log("API listening on port 3002 and callback url is", process.env.CALLBACK_URL)
+);

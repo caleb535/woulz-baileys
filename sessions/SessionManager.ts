@@ -15,6 +15,7 @@ import { handleMediaMessage } from "./handlers/mediaHandler.ts";
 import { extractMessageText } from "./handlers/textHandler.ts";
 import { logUnmappedMessage } from "./logger/unmappedLogger.ts";
 import { createBasePayload } from "./utils/payloadUtils.ts";
+import "dotenv/config";
 
 const sessions: Map<string, WASocket> = new Map();
 const sessionQRCodes: Map<string, string> = new Map();
@@ -26,7 +27,7 @@ export async function createSession(name: string): Promise<WASocket> {
   }
 
   const config = getSessionConfig(name);
-  const baseURL = "http://kvoip.localhost:3000/whatsapp/webhook";
+  const baseURL = `${process.env.CALLBACK_URL}/whatsapp/webhook`;
   let crmEndpoint = baseURL;
   if (config) {
     if (config.workspaceID && config.canalID) {
