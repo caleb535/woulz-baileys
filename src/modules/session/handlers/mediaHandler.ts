@@ -2,16 +2,16 @@ import P from "pino";
 import path from "path";
 import type { WASocket, WAMessage, proto } from "@whiskeysockets/baileys";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
-import { ensureDirectoryExists, writeFileBuffer } from "../utils/fsUtils.ts";
-import { bufferToBase64 } from "../utils/bufferUtils.ts";
+import { ensureDirectoryExists, writeFileBuffer } from "../utils/fsUtils";
+import { bufferToBase64 } from "../utils/bufferUtils";
 import {
   createBasePayload,
   buildImageMessage,
   buildVideoMessage,
   buildDocumentMessage,
   buildAudioMessage,
-} from "../utils/payloadUtils.ts";
-import { sendWebhookPayload } from "../utils/webhook.ts";
+} from "../utils/payloadUtils";
+import { sendWebhookPayload } from "../utils/webhook";
 
 export type MediaConfig = {
   mediaType: "image" | "video" | "document" | "audio";
@@ -134,6 +134,8 @@ export async function handleMediaMessage(
     "&addressingMode=" +
     (message as any).key.addressingMode;
   const cleanWaId = waId.replace(/:[^@]*@/g, "@");
+  const stanzaId = message.message?.extendedTextMessage?.contextInfo?.stanzaId ?? undefined;
+
   const payload = createBasePayload(
     sessionName,
     cleanWaId,
@@ -142,7 +144,8 @@ export async function handleMediaMessage(
     message.pushName ?? "",
     !!message.key?.fromMe,
     ppUrl,
-    senderPn
+    senderPn,
+    stanzaId
   );
 
   const common = {
@@ -164,7 +167,8 @@ export async function handleMediaMessage(
       common.from,
       common.id,
       common.timestamp,
-      !!message.key?.fromMe
+      !!message.key?.fromMe,
+      stanzaId
     );
   } else if (mediaType === "video") {
     const caption = (media as any)?.caption as string | undefined;
@@ -176,7 +180,8 @@ export async function handleMediaMessage(
       common.from,
       common.id,
       common.timestamp,
-      !!message.key?.fromMe
+      !!message.key?.fromMe,
+      stanzaId
     );
   } else if (mediaType === "document") {
     const fileName = (media as any)?.fileName as string | undefined;
@@ -188,7 +193,8 @@ export async function handleMediaMessage(
       common.from,
       common.id,
       common.timestamp,
-      !!message.key?.fromMe
+      !!message.key?.fromMe,
+      stanzaId
     );
   } else if (mediaType === "audio") {
     const voice = (media as any)?.ptt || false;
@@ -202,7 +208,8 @@ export async function handleMediaMessage(
       common.from,
       common.id,
       common.timestamp,
-      !!message.key?.fromMe
+      !!message.key?.fromMe,
+      stanzaId
     );
   }
 

@@ -1,7 +1,7 @@
 import fs from "fs";
 import type { WAMessage } from "@whiskeysockets/baileys";
-import { ensureDirectoryExists } from "../utils/fsUtils.ts";
-import { createBasePayload, buildTextMessage } from "../utils/payloadUtils.ts";
+import { ensureDirectoryExists } from "../utils/fsUtils";
+import { createBasePayload, buildTextMessage } from "../utils/payloadUtils";
 
 export function extractMessageText(message: WAMessage): string | null {
   const isGroup = message.key?.remoteJid?.includes("@g.us");
@@ -38,19 +38,26 @@ export function saveStatusText(
 
 export function buildTextPayload(sessionName: string, message: WAMessage, text: string) {
   const wa_id = (message as any).key.senderPn.split("@")[0];
+  const stanzaId = message.message?.extendedTextMessage?.contextInfo?.stanzaId ?? undefined;
   const payload = createBasePayload(
     sessionName,
     wa_id,
     message.key?.id ?? "",
     message.messageTimestamp?.toString(),
-    message.pushName ?? ""
+    message.pushName ?? "",
+    !!message.key.fromMe,
+    undefined, // ppUrl
+    null, // senderPn
+    stanzaId
   );
 
   payload.entry[0].changes[0].value.messages[0] = buildTextMessage(
     text,
     wa_id,
     message.key?.id ?? "",
-    message.messageTimestamp?.toString() || ""
+    message.messageTimestamp?.toString() || "",
+    !!message.key.fromMe,
+    stanzaId
   );
   return payload;
 }

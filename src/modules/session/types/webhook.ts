@@ -44,11 +44,11 @@ export interface WebhookMessageAudio {
 }
 
 export type WebhookMessage =
-  | WebhookMessageText & { context: { id: string } }
-  | WebhookMessageImage & { context: { id: string } }
-  | WebhookMessageVideo & { context: { id: string } }
-  | WebhookMessageDocument & { context: { id: string } }
-  | WebhookMessageAudio & { context: { id: string } };
+  | (WebhookMessageText & { context: { id: string } })
+  | (WebhookMessageImage & { context: { id: string } })
+  | (WebhookMessageVideo & { context: { id: string } })
+  | (WebhookMessageDocument & { context: { id: string } })
+  | (WebhookMessageAudio & { context: { id: string } });
 
 export interface WebhookChangeValue {
   messaging_product: "whatsapp";

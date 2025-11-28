@@ -5,7 +5,7 @@ import type {
   WebhookMessageText,
   WebhookMessageVideo,
   WebhookPayload,
-} from "../types/webhook.ts";
+} from "../types/webhook";
 
 export function createBasePayload(
   sessionName: string,
@@ -50,7 +50,7 @@ export function createBasePayload(
                   text: { body: "" },
                   fromMe,
                   context: {
-                    id: stanzaId,
+                    id: stanzaId || "",
                   },
                 },
               ],
@@ -68,9 +68,18 @@ export function buildTextMessage(
   from: string,
   id: string,
   timestamp: string,
-  fromMe: boolean
-): WebhookMessageText {
-  return { type: "text", text: { body }, from, fromMe, id, timestamp };
+  fromMe: boolean,
+  stanzaId: string | undefined
+): WebhookMessageText & { context: { id: string } } {
+  return {
+    type: "text",
+    text: { body },
+    from,
+    fromMe,
+    id,
+    timestamp,
+    context: { id: stanzaId || "" },
+  };
 }
 
 export function buildImageMessage(
@@ -81,8 +90,9 @@ export function buildImageMessage(
   from: string,
   id: string,
   timestamp: string,
-  fromMe: boolean
-): WebhookMessageImage {
+  fromMe: boolean,
+  stanzaId: string | undefined
+): WebhookMessageImage & { context: { id: string } } {
   return {
     type: "image",
     image: { mime_type: mimeType, base64, sha256, caption },
@@ -90,6 +100,7 @@ export function buildImageMessage(
     id,
     timestamp,
     fromMe,
+    context: { id: stanzaId || "" },
   };
 }
 
@@ -101,8 +112,9 @@ export function buildVideoMessage(
   from: string,
   id: string,
   timestamp: string,
-  fromMe: boolean
-): WebhookMessageVideo {
+  fromMe: boolean,
+  stanzaId: string | undefined
+): WebhookMessageVideo & { context: { id: string } } {
   return {
     type: "video",
     video: { mime_type: mimeType, base64, sha256, caption },
@@ -110,6 +122,7 @@ export function buildVideoMessage(
     id,
     timestamp,
     fromMe,
+    context: { id: stanzaId || "" },
   };
 }
 
@@ -121,8 +134,9 @@ export function buildDocumentMessage(
   from: string,
   id: string,
   timestamp: string,
-  fromMe: boolean
-): WebhookMessageDocument {
+  fromMe: boolean,
+  stanzaId: string | undefined
+): WebhookMessageDocument & { context: { id: string } } {
   return {
     type: "document",
     document: { mime_type: mimeType, base64, sha256, file_name: fileName },
@@ -130,6 +144,7 @@ export function buildDocumentMessage(
     id,
     timestamp,
     fromMe,
+    context: { id: stanzaId || "" },
   };
 }
 
@@ -142,8 +157,9 @@ export function buildAudioMessage(
   from: string,
   id: string,
   timestamp: string,
-  fromMe: boolean
-): WebhookMessageAudio {
+  fromMe: boolean,
+  stanzaId: string | undefined
+): WebhookMessageAudio & { context: { id: string } } {
   return {
     type: "audio",
     audio: { mime_type: mimeType, base64, sha256, voice, duration },
@@ -151,5 +167,6 @@ export function buildAudioMessage(
     id,
     timestamp,
     fromMe,
+    context: { id: stanzaId || "" },
   };
 }
