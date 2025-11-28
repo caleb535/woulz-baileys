@@ -1,21 +1,19 @@
-import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
   Browsers,
-  fetchLatestWaWebVersion,
+  DisconnectReason,
   makeWASocket,
   proto,
   useMultiFileAuthState,
-  WASocket,
-  DisconnectReason,
+  WASocket
 } from "@whiskeysockets/baileys";
 import axios, { AxiosError } from "axios";
 import * as fs from "fs";
 import * as path from "path";
-import P from "pino";
+import P, { version } from "pino";
 import { handleMediaMessage } from "./handlers/mediaHandler";
 import { extractMessageText } from "./handlers/textHandler";
-import { logUnmappedMessage } from "./logger/unmappedLogger";
 import { createBasePayload } from "./utils/payloadUtils";
 
 // Types
@@ -91,11 +89,10 @@ export class SessionService implements OnModuleInit {
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(path.join(this.sessionsDir, name));
-    const { version } = await fetchLatestWaWebVersion({});
+    console.log(version);
 
     const sock = makeWASocket({
       auth: state,
-      version,
       browser: Browsers.windows("Google Chrome"),
       logger: P({ level: "silent" }) as any,
       getMessage: async () => undefined,
@@ -179,7 +176,7 @@ export class SessionService implements OnModuleInit {
           return;
         }
         try {
-          if (!message.key.remoteJid) throw new Error();
+          if (!message.key?.remoteJid) throw new Error();
           ppUrl = (await sock.profilePictureUrl(message.key.remoteJid)) || undefined;
         } catch {}
 
@@ -268,7 +265,7 @@ export class SessionService implements OnModuleInit {
               (message as any).key.id,
               (message as any).messageTimestamp?.toString(),
               message.pushName as any,
-              !!message.key.fromMe,
+              !!message.key?.fromMe,
               ppUrl,
               senderPn?.slice(0, senderPn.indexOf("@")) ?? null,
               message.message?.extendedTextMessage?.contextInfo?.stanzaId ?? undefined
