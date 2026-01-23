@@ -182,10 +182,12 @@ export class SessionService implements OnModuleInit {
 
         const text = extractMessageText(message as any);
         if (
-          message.key?.remoteJid?.includes("@g.us") &&
-          !message.key.remoteJid.includes("newsletter")
+          (message.key?.remoteJid?.includes("@g.us") &&
+          !message.key.remoteJid.includes("newsletter")) ||
+          message.key?.remoteJid?.includes("broadcast")
         ) {
-          this.logger.debug(`${name} ignoring group message`);
+          this.logger.debug(`${name} ignoring group or broadcast message`);
+          return;
         }
 
         const mediaHandlers = [
