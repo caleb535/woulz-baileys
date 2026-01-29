@@ -6,7 +6,7 @@ import {
   makeWASocket,
   proto,
   useMultiFileAuthState,
-  WASocket
+  WASocket,
 } from "@whiskeysockets/baileys";
 import axios, { AxiosError } from "axios";
 import * as fs from "fs";
@@ -142,13 +142,15 @@ export class SessionService implements OnModuleInit {
               {
                 changes: [
                   {
-                    statuses: [
-                      {
-                        id: key?.id,
-                        status: statusResolved,
-                        baileysRecipientId: key?.remoteJid,
-                      },
-                    ],
+                    value: {
+                      statuses: [
+                        {
+                          id: key?.id,
+                          status: statusResolved,
+                          baileysRecipientId: key?.remoteJid,
+                        },
+                      ],
+                    },
                   },
                 ],
               },
@@ -183,7 +185,7 @@ export class SessionService implements OnModuleInit {
         const text = extractMessageText(message as any);
         if (
           (message.key?.remoteJid?.includes("@g.us") &&
-          !message.key.remoteJid.includes("newsletter")) ||
+            !message.key.remoteJid.includes("newsletter")) ||
           message.key?.remoteJid?.includes("broadcast")
         ) {
           this.logger.debug(`${name} ignoring group or broadcast message`);
@@ -282,9 +284,9 @@ export class SessionService implements OnModuleInit {
 
             axios.post(crmEndpoint, payload).catch((err) => {
               if (err.response) {
-                this.logger.error(err.response)
+                this.logger.error(err.response);
               } else {
-                this.logger.error(err)
+                this.logger.error(err);
               }
             });
           } catch (err) {
