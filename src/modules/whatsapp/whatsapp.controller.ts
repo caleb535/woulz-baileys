@@ -4,12 +4,21 @@ import { Response } from "express";
 
 @Controller("api")
 export class WhatsappController {
-  constructor(private readonly whatsappService: WhatsappService) {}
+  constructor(private readonly whatsappService: WhatsappService) { }
 
   @Post("session/:id/send")
   async sendMessage(@Param("id") id: string, @Body() body: any, @Res() res: Response) {
     try {
       const result = await this.whatsappService.sendMessage(id, body.fields);
+      res.status(HttpStatus.OK).json(result);
+    } catch (error: any) {
+      res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
+    }
+  }
+  @Post("session/:id/typing")
+  async sendTypingStatus(@Param("id") id: string, @Body() body: any, @Res() res: Response) {
+    try {
+      const result = await this.whatsappService.sendTypingStatus(id, body.to);
       res.status(HttpStatus.OK).json(result);
     } catch (error: any) {
       res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
