@@ -2,6 +2,7 @@ import type {
   WebhookMessageAudio,
   WebhookMessageDocument,
   WebhookMessageImage,
+  WebhookMessageSticker,
   WebhookMessageText,
   WebhookMessageVideo,
   WebhookPayload,
@@ -163,6 +164,27 @@ export function buildAudioMessage(
   return {
     type: "audio",
     audio: { mime_type: mimeType, base64, sha256, voice, duration },
+    from,
+    id,
+    timestamp,
+    fromMe,
+    context: { id: stanzaId || "" },
+  };
+}
+
+export function buildStickerMessage(
+  mimeType: string,
+  base64: string,
+  sha256: string | undefined,
+  from: string,
+  id: string,
+  timestamp: string,
+  fromMe: boolean,
+  stanzaId: string | undefined
+): WebhookMessageSticker & { context: { id: string } } {
+  return {
+    type: "sticker",
+    sticker: { mime_type: mimeType, base64, sha256 },
     from,
     id,
     timestamp,

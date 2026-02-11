@@ -202,6 +202,7 @@ export class SessionService implements OnModuleInit {
             captionKey: null,
           },
           { mediaType: "audio", mediaKey: "audioMessage", extension: "mp3", captionKey: null },
+          { mediaType: "sticker", mediaKey: "stickerMessage", extension: "webp", captionKey: null },
         ];
 
         let mediaHandled = false;

@@ -10,11 +10,12 @@ import {
   buildVideoMessage,
   buildDocumentMessage,
   buildAudioMessage,
+  buildStickerMessage,
 } from "../utils/payloadUtils";
 import { sendWebhookPayload } from "../utils/webhook";
 
 export type MediaConfig = {
-  mediaType: "image" | "video" | "document" | "audio";
+  mediaType: "image" | "video" | "document" | "audio" | "sticker";
   mediaKey: keyof proto.IMessage;
   extension: string;
   captionKey: "caption" | null;
@@ -96,7 +97,8 @@ export async function handleMediaMessage(
     | proto.Message["imageMessage"]
     | proto.Message["videoMessage"]
     | proto.Message["documentMessage"]
-    | proto.Message["audioMessage"];
+    | proto.Message["audioMessage"]
+    | proto.Message["stickerMessage"];
 
   const { folder, fullPath } = getFolderAndFileName(message, mediaConfig.extension, sessionName);
 
@@ -205,6 +207,17 @@ export async function handleMediaMessage(
       sha256,
       voice,
       duration,
+      common.from,
+      common.id,
+      common.timestamp,
+      !!message.key?.fromMe,
+      stanzaId
+    );
+  } else if (mediaType === "sticker") {
+    payload.entry[0].changes[0].value.messages[0] = buildStickerMessage(
+      mimetype,
+      base64String,
+      sha256,
       common.from,
       common.id,
       common.timestamp,

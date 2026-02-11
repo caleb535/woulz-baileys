@@ -43,12 +43,22 @@ export interface WebhookMessageAudio {
   fromMe: boolean;
 }
 
+export interface WebhookMessageSticker {
+  type: "sticker";
+  sticker: { mime_type: string; sha256?: string; base64: string };
+  from: string;
+  id: string;
+  timestamp: string;
+  fromMe: boolean;
+}
+
 export type WebhookMessage =
   | (WebhookMessageText & { context: { id: string } })
   | (WebhookMessageImage & { context: { id: string } })
   | (WebhookMessageVideo & { context: { id: string } })
   | (WebhookMessageDocument & { context: { id: string } })
-  | (WebhookMessageAudio & { context: { id: string } });
+  | (WebhookMessageAudio & { context: { id: string } })
+  | (WebhookMessageSticker & { context: { id: string } });
 
 export interface WebhookChangeValue {
   messaging_product: "whatsapp";

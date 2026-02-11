@@ -4,7 +4,7 @@ import { Response } from "express";
 
 @Controller("api")
 export class SessionController {
-  constructor(private readonly sessionService: SessionService) {}
+  constructor(private readonly sessionService: SessionService) { }
 
   @Post("session/:id")
   async createSession(
