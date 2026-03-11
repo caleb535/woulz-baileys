@@ -28,7 +28,14 @@ export class WhatsappService {
   }
 
   private async convertAudioToOgg(inputPath: string, outputPath: string): Promise<void> {
-    await execFileAsync("ffmpeg", ["-i", inputPath, "-c:a", "libopus", "-y", outputPath]);
+    // WhatsApp specs: OPUS codec, OGG container, 48000 Hz sample rate, mono
+    await execFileAsync("ffmpeg", [
+      "-i", inputPath,
+      "-c:a", "libopus",
+      "-ar", "48000",
+      "-ac", "1",
+      "-y", outputPath,
+    ]);
   }
 
   private async downloadFile(url: string, outputPath: string): Promise<void> {
