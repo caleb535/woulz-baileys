@@ -2,7 +2,6 @@ import P from "pino";
 import path from "path";
 import type { WASocket, WAMessage, proto } from "@whiskeysockets/baileys";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
-import { ensureDirectoryExists, writeFileBuffer } from "../utils/fsUtils";
 import { bufferToBase64 } from "../utils/bufferUtils";
 import {
   createBasePayload,
@@ -44,13 +43,12 @@ export function getFolderAndFileName(
   };
 }
 
-export async function downloadAndSaveMedia(
+export async function downloadMedia(
   message: WAMessage,
-  sock: WASocket,
-  filePath: string
+  sock: WASocket
 ): Promise<Buffer | null> {
   try {
-    const buffer = (await downloadMediaMessage(
+    return (await downloadMediaMessage(
       message,
       "buffer",
       {},
@@ -59,11 +57,8 @@ export async function downloadAndSaveMedia(
         reuploadRequest: sock.updateMediaMessage,
       }
     )) as Buffer;
-    writeFileBuffer(filePath, buffer);
-    console.log(`Arquivo salvo em: ${filePath}`);
-    return buffer;
   } catch (err: any) {
-    console.log("Erro ao baixar/salvar arquivo:", err.message);
+    console.log("Erro ao baixar mídia:", err.message);
     return null;
   }
 }
@@ -100,10 +95,6 @@ export async function handleMediaMessage(
     | proto.Message["audioMessage"]
     | proto.Message["stickerMessage"];
 
-  const { folder, fullPath } = getFolderAndFileName(message, mediaConfig.extension, sessionName);
-
-  // Adjust extension for document/audio based on metadata
-  const updatedConfig: MediaConfig = { ...mediaConfig };
   if (mediaType === "document") {
     const doc = media as proto.Message["documentMessage"];
     const allowedMimeTypes = [
@@ -116,16 +107,11 @@ export async function handleMediaMessage(
     if (!doc?.mimetype || !allowedMimeTypes.includes(doc.mimetype)) {
       return false;
     }
-    const extension = doc.fileName ? path.extname(doc.fileName).substring(1) : "pdf";
-    updatedConfig.extension = extension;
-  }
-  if (mediaType === "audio") {
-    const audio = media as proto.Message["audioMessage"];
-    updatedConfig.extension = audio?.mimetype?.includes("ogg") ? "ogg" : "mp3";
   }
 
-  ensureDirectoryExists(folder);
-  const buffer = await downloadAndSaveMedia(message, sock, fullPath);
+  const buffer = await downloadMedia(message, sock);
+  if (!buffer) return false;
+
   const base64String = bufferToBase64(buffer, (media as any)?.mimetype ?? "");
 
   const waId =
