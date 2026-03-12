@@ -1,94 +1,9 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { SessionService } from "../session/session.service";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
-import { execFile } from "child_process";
-import { promisify } from "util";
-import axios from "axios";
-
-const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class WhatsappService {
   constructor(private readonly sessionService: SessionService) { }
-
-  private async getAudioDuration(audioPath: string): Promise<number> {
-    const { stdout } = await execFileAsync("ffprobe", [
-      "-v",
-      "error",
-      "-show_entries",
-      "format=duration",
-      "-of",
-      "default=noprint_wrappers=1:nokey=1",
-      audioPath,
-    ]);
-    const duration = parseFloat(stdout.trim()) || 0;
-    return Math.ceil(duration);
-  }
-
-  private async convertAudioToOgg(inputPath: string, outputPath: string): Promise<void> {
-    // WhatsApp specs: OPUS codec, OGG container, 48000 Hz sample rate, mono
-    await execFileAsync("ffmpeg", [
-      "-i", inputPath,
-      "-c:a", "libopus",
-      "-ar", "48000",
-      "-ac", "1",
-      "-y", outputPath,
-    ]);
-  }
-
-  private async downloadFile(url: string, outputPath: string): Promise<void> {
-    const response = await axios({
-      url,
-      method: "GET",
-      responseType: "stream",
-    });
-
-    const writer = fs.createWriteStream(outputPath);
-    response.data.pipe(writer);
-
-    return new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
-  }
-
-  private async processAudio(audioUrl: string): Promise<{
-    duration: number;
-    convertedPath: string;
-  }> {
-    const tempDir = os.tmpdir();
-    const tempInputPath = path.join(tempDir, `audio_input_${Date.now()}.tmp`);
-    const tempOutputPath = path.join(tempDir, `audio_output_${Date.now()}.ogg`);
-
-    try {
-      // Baixar o arquivo original
-      await this.downloadFile(audioUrl, tempInputPath);
-
-      // Obter a duração
-      const duration = await this.getAudioDuration(tempInputPath);
-
-      // Converter para OGG/Opus
-      await this.convertAudioToOgg(tempInputPath, tempOutputPath);
-
-      // Limpar arquivo original temporário
-      if (fs.existsSync(tempInputPath)) {
-        fs.unlinkSync(tempInputPath);
-      }
-
-      return { duration, convertedPath: tempOutputPath };
-    } catch (error) {
-      // Limpar arquivos em caso de erro
-      if (fs.existsSync(tempInputPath)) {
-        fs.unlinkSync(tempInputPath);
-      }
-      if (fs.existsSync(tempOutputPath)) {
-        fs.unlinkSync(tempOutputPath);
-      }
-      throw error;
-    }
-  }
 
   async sendTypingStatus(id: string, to: string) {
     const sock = this.sessionService.getSession(id);
@@ -120,26 +35,11 @@ export class WhatsappService {
 
       if (fields.type !== "text") {
         if (fields.type === "audio") {
-          const audioUrl = fields.audio.link;
-          const { duration, convertedPath } = await this.processAudio(audioUrl);
-
-          fields.duration = duration;
-          fields.mimetype = "audio/ogg; codecs=opus";
-
-          // Ler o arquivo convertido como buffer
-          const audioBuffer = fs.readFileSync(convertedPath);
-
           const messageBody = {
-            audio: audioBuffer,
-            mimetype: "audio/ogg; codecs=opus",
-            ptt: true,
-            seconds: duration,
+            audio: { url: fields.audio.link },
+            mimetype: fields.audio.mimetype || undefined,
+            ptt: fields.audio.ptt ?? true,
           };
-
-          // Limpar arquivo convertido após ler
-          if (fs.existsSync(convertedPath)) {
-            fs.unlinkSync(convertedPath);
-          }
 
           sentMessage = await sock.sendMessage(fields.to, messageBody as any);
         } else {
