@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class WhatsappService {
-  constructor(private readonly sessionService: SessionService) { }
+  constructor(private readonly sessionService: SessionService) {}
 
   private async getAudioDuration(audioPath: string): Promise<number> {
     const { stdout } = await execFileAsync("ffprobe", [
@@ -29,12 +29,17 @@ export class WhatsappService {
 
   private async convertAudioToMp3(inputPath: string, outputPath: string): Promise<void> {
     await execFileAsync("ffmpeg", [
-      "-i", inputPath,
+      "-i",
+      inputPath,
       "-vn",
-      "-ab", "128k",
-      "-ar", "44100",
-      "-f", "ipod",
-      "-y", outputPath,
+      "-ab",
+      "128k",
+      "-ar",
+      "44100",
+      "-f",
+      "ipod",
+      "-y",
+      outputPath,
     ]);
   }
 
@@ -90,9 +95,9 @@ export class WhatsappService {
     if (!sock) {
       throw new NotFoundException("Session not found");
     }
-    sock?.sendPresenceUpdate("available", to)
-    sock?.presenceSubscribe(to)
-    sock?.sendPresenceUpdate("composing", to)
+    sock?.sendPresenceUpdate("available", to);
+    sock?.presenceSubscribe(to);
+    sock?.sendPresenceUpdate("composing", to);
     return true;
   }
 
@@ -123,7 +128,7 @@ export class WhatsappService {
           const messageBody = {
             audio: audioBuffer,
             mimetype: "audio/mp4",
-            ptt: fields.audio.ptt ?? true,
+            ptt: true,
             seconds: duration,
           };
 
@@ -145,9 +150,13 @@ export class WhatsappService {
         return { messages: [{ id: sentMessage?.key.id }] };
       }
 
-      sentMessage = await sock.sendMessage(fields.to, {
-        text: fields.text.body,
-      }, fields);
+      sentMessage = await sock.sendMessage(
+        fields.to,
+        {
+          text: fields.text.body,
+        },
+        fields
+      );
       this.sessionService.updateLastSentMessageTimestamp(id, Date.now() / 1000);
 
       return { messages: [{ id: sentMessage?.key.id }] };
