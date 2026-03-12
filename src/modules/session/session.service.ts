@@ -89,7 +89,6 @@ export class SessionService implements OnModuleInit {
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(path.join(this.sessionsDir, name));
-    console.log(version);
 
     const sock = makeWASocket({
       auth: state,

@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class WhatsappService {
-  constructor(private readonly sessionService: SessionService) { }
+  constructor(private readonly sessionService: SessionService) {}
 
   private async getAudioDuration(audioPath: string): Promise<number> {
     const { stdout } = await execFileAsync("ffprobe", [
@@ -27,14 +27,19 @@ export class WhatsappService {
     return Math.ceil(duration);
   }
 
-  private async convertAudioToOgg(inputPath: string, outputPath: string): Promise<void> {
-    // WhatsApp specs: OPUS codec, OGG container, 48000 Hz sample rate, mono
+  private async convertAudioToMp3(inputPath: string, outputPath: string): Promise<void> {
     await execFileAsync("ffmpeg", [
-      "-i", inputPath,
-      "-c:a", "libopus",
-      "-ar", "48000",
-      "-ac", "1",
-      "-y", outputPath,
+      "-i",
+      inputPath,
+      "-vn",
+      "-ab",
+      "128k",
+      "-ar",
+      "44100",
+      "-f",
+      "ipod",
+      "-y",
+      outputPath,
     ]);
   }
 
@@ -60,26 +65,21 @@ export class WhatsappService {
   }> {
     const tempDir = os.tmpdir();
     const tempInputPath = path.join(tempDir, `audio_input_${Date.now()}.tmp`);
-    const tempOutputPath = path.join(tempDir, `audio_output_${Date.now()}.ogg`);
+    const tempOutputPath = path.join(tempDir, `audio_output_${Date.now()}.mp3`);
 
     try {
-      // Baixar o arquivo original
       await this.downloadFile(audioUrl, tempInputPath);
 
-      // Obter a duração
       const duration = await this.getAudioDuration(tempInputPath);
 
-      // Converter para OGG/Opus
-      await this.convertAudioToOgg(tempInputPath, tempOutputPath);
+      await this.convertAudioToMp3(tempInputPath, tempOutputPath);
 
-      // Limpar arquivo original temporário
       if (fs.existsSync(tempInputPath)) {
         fs.unlinkSync(tempInputPath);
       }
 
       return { duration, convertedPath: tempOutputPath };
     } catch (error) {
-      // Limpar arquivos em caso de erro
       if (fs.existsSync(tempInputPath)) {
         fs.unlinkSync(tempInputPath);
       }
@@ -95,9 +95,9 @@ export class WhatsappService {
     if (!sock) {
       throw new NotFoundException("Session not found");
     }
-    sock?.sendPresenceUpdate("available", to)
-    sock?.presenceSubscribe(to)
-    sock?.sendPresenceUpdate("composing", to)
+    sock?.sendPresenceUpdate("available", to);
+    sock?.presenceSubscribe(to);
+    sock?.sendPresenceUpdate("composing", to);
     return true;
   }
 
@@ -123,20 +123,15 @@ export class WhatsappService {
           const audioUrl = fields.audio.link;
           const { duration, convertedPath } = await this.processAudio(audioUrl);
 
-          fields.duration = duration;
-          fields.mimetype = "audio/ogg; codecs=opus";
-
-          // Ler o arquivo convertido como buffer
           const audioBuffer = fs.readFileSync(convertedPath);
 
           const messageBody = {
             audio: audioBuffer,
-            mimetype: "audio/ogg; codecs=opus",
+            mimetype: "audio/mp4",
             ptt: true,
             seconds: duration,
           };
 
-          // Limpar arquivo convertido após ler
           if (fs.existsSync(convertedPath)) {
             fs.unlinkSync(convertedPath);
           }
@@ -155,9 +150,13 @@ export class WhatsappService {
         return { messages: [{ id: sentMessage?.key.id }] };
       }
 
-      sentMessage = await sock.sendMessage(fields.to, {
-        text: fields.text.body,
-      }, fields);
+      sentMessage = await sock.sendMessage(
+        fields.to,
+        {
+          text: fields.text.body,
+        },
+        fields
+      );
       this.sessionService.updateLastSentMessageTimestamp(id, Date.now() / 1000);
 
       return { messages: [{ id: sentMessage?.key.id }] };
