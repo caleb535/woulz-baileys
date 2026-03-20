@@ -94,7 +94,6 @@ export class SessionService implements OnModuleInit {
       auth: state,
       browser: Browsers.windows("Google Chrome"),
       logger: P({ level: "silent" }) as any,
-      version: [2, 3000, 1033893291],
       getMessage: async () => undefined,
     });
 
