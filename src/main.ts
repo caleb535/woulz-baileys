@@ -1,12 +1,15 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import * as express from "express";
 import * as path from "path";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const verbose = process.env.NODE_ENV === "development";
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: verbose ? ["debug", "error", "warn", "log", "fatal"] : ["error", "warn", "log", "fatal"],
+  });
 
   app.enableCors({
     origin: [
@@ -28,8 +31,9 @@ async function bootstrap() {
   app.setViewEngine("ejs");
 
   const port = process.env.PORT || 3002;
-  await app.listen(port, '0.0.0.0');
-  console.log(`Application is running on: ${await app.getUrl()}`);
-  console.log("Callback URL is", process.env.CALLBACK_URL);
+  await app.listen(port, "0.0.0.0");
+  const logger = new Logger("Bootstrap");
+  logger.warn(`Application is running on: ${await app.getUrl()}`);
+  logger.warn(`Callback URL is ${process.env.CALLBACK_URL ?? "(not set)"}`);
 }
 bootstrap();
