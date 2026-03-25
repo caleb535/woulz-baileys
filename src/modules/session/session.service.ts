@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import {
   Browsers,
   DisconnectReason,
+  fetchLatestWaWebVersion,
   makeWASocket,
   proto,
   useMultiFileAuthState,
@@ -11,7 +12,7 @@ import {
 import axios, { AxiosError } from "axios";
 import * as fs from "fs";
 import * as path from "path";
-import P, { version } from "pino";
+import P from "pino";
 import { handleMediaMessage } from "./handlers/mediaHandler";
 import { extractMessageText } from "./handlers/textHandler";
 import { createBasePayload } from "./utils/payloadUtils";
@@ -58,7 +59,7 @@ export class SessionService implements OnModuleInit {
           config.lastSentMessageTimestamp &&
           Date.now() / 1000 - config.lastSentMessageTimestamp > 1296000
         ) {
-          this.logger.log(
+          this.logger.warn(
             `Deleting session ${sessionName}, as it has been inactive for over 15 days.`
           );
           this.deleteSession(sessionName);
@@ -89,10 +90,12 @@ export class SessionService implements OnModuleInit {
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(path.join(this.sessionsDir, name));
-
+    this.logger.debug("Fetching latest WhatsApp web version");
+    const { version } = await fetchLatestWaWebVersion()
+    this.logger.debug(`Latest WhatsApp web version: ${version}`);
     const sock = makeWASocket({
       auth: state,
-      browser: Browsers.windows("Google Chrome"),
+      version,
       logger: P({ level: "silent" }) as any,
       getMessage: async () => undefined,
     });
