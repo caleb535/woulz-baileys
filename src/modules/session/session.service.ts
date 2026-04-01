@@ -7,6 +7,7 @@ import {
   makeWASocket,
   proto,
   useMultiFileAuthState,
+  WAMessageKey,
   WASocket,
 } from "@whiskeysockets/baileys";
 import axios, { AxiosError } from "axios";
@@ -15,7 +16,11 @@ import * as path from "path";
 import P from "pino";
 import { handleMediaMessage } from "./handlers/mediaHandler";
 import { extractMessageText } from "./handlers/textHandler";
-import { createBasePayload } from "./utils/payloadUtils";
+import {
+  createBasePayload,
+  createReactionPayload,
+  normalizeMessageTimestampToUnixSeconds,
+} from "./utils/payloadUtils";
 
 // Types
 export type SessionConfig = {
@@ -114,6 +119,59 @@ export class SessionService implements OnModuleInit {
         if (shouldRestart && !this.sessionsToBeDeleted.has(name)) {
           setTimeout(() => void this.createSession(name), 2000);
         }
+      }
+    });
+
+    sock.ev.on("messages.reaction", async (events) => {
+      for (const { key, reaction } of events) {
+        const rk = reaction.key as WAMessageKey | undefined;
+        const remoteJid = rk?.remoteJid ?? key?.remoteJid;
+        if (!remoteJid || !key?.id || !rk?.id) continue;
+
+        if (
+          (remoteJid.includes("@g.us") && !remoteJid.includes("newsletter")) ||
+          remoteJid.includes("broadcast") ||
+          remoteJid.includes("status")
+        ) {
+          continue;
+        }
+
+        const waId =
+          "primary=" +
+          rk.remoteJid +
+          "&secondary=" +
+          (rk.remoteJidAlt ?? "") +
+          "&addressingMode=" +
+          (rk.addressingMode ?? "");
+        const cleanWaId = waId.replace(/:[^@]*@/g, "@");
+
+        const senderJid =
+          rk.addressingMode === "pn" ? rk.remoteJid : (rk.remoteJidAlt ?? null);
+        const pn = senderJid?.slice(0, senderJid.indexOf("@")) ?? null;
+
+        const emoji = reaction.text?.trim() ? reaction.text : undefined;
+
+        const payload = createReactionPayload(
+          name,
+          cleanWaId,
+          rk.id,
+          key.id,
+          normalizeMessageTimestampToUnixSeconds(
+            reaction.senderTimestampMs != null ? reaction.senderTimestampMs : Date.now()
+          ),
+          !!rk.fromMe,
+          emoji,
+          undefined,
+          pn
+        );
+
+        axios
+          .post(crmEndpoint, payload)
+          .catch((e: AxiosError) =>
+            this.logger.error(
+              `Could not send reaction ${rk.id} to CRM Endpoint: ${e.message}`
+            )
+          );
       }
     });
 
@@ -267,7 +325,7 @@ export class SessionService implements OnModuleInit {
               name,
               cleanWaId,
               (message as any).key.id,
-              (message as any).messageTimestamp?.toString(),
+              normalizeMessageTimestampToUnixSeconds((message as any).messageTimestamp),
               message.pushName as any,
               !!message.key?.fromMe,
               ppUrl,

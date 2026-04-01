@@ -10,6 +10,7 @@ import {
   buildDocumentMessage,
   buildAudioMessage,
   buildStickerMessage,
+  normalizeMessageTimestampToUnixSeconds,
 } from "../utils/payloadUtils";
 import { sendWebhookPayload } from "../utils/webhook";
 
@@ -128,7 +129,7 @@ export async function handleMediaMessage(
     sessionName,
     cleanWaId,
     message.key?.id ?? "",
-    message.messageTimestamp?.toString(),
+    normalizeMessageTimestampToUnixSeconds(message.messageTimestamp),
     message.pushName ?? "",
     !!message.key?.fromMe,
     ppUrl,
@@ -139,7 +140,7 @@ export async function handleMediaMessage(
   const common = {
     from: waId,
     id: message.key?.id ?? "",
-    timestamp: message.messageTimestamp?.toString() || "",
+    timestamp: normalizeMessageTimestampToUnixSeconds(message.messageTimestamp),
   };
 
   const mimetype = (media as any)?.mimetype || "";

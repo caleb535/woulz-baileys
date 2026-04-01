@@ -16,9 +16,8 @@ export class SessionController {
     if (this.sessionService.getSession(id)) {
       this.logger.debug(`Session ${id} already exists, deleting...`);
       this.sessionService.deleteSession(id);
-      this.sessionService.getSession(id);
-      if (this.sessionService.getSession(id)) {
-        this.logger.debug(`Session ${id} deleted`);
+      if (!this.sessionService.getSession(id)) {
+        this.logger.debug(`Session ${id} deleted successfully`);
       }
     }
     try {
@@ -37,16 +36,19 @@ export class SessionController {
   }
 
   @Get("session/status/:id")
-  getSessionStatus(@Param("id") id: string, @Res() res: Response) {
+  async getSessionStatus(@Param("id") id: string, @Res() res: Response) {
     const sock = this.sessionService.getSession(id);
     if (!sock) {
       return res.status(HttpStatus.NOT_FOUND).json({ error: "Session not found" });
     }
 
+    const userImgUrl = await sock.profilePictureUrl(sock.user?.id || "");
+
     const response = {
       session: id,
       connected: !!sock.user,
       user: sock.user || null,
+      userImgUrl: userImgUrl || null,
     };
     this.logger.debug(`Session ${id} status: ${JSON.stringify(response)}`);
     res.status(HttpStatus.OK).json(response);

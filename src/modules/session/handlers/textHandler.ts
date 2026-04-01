@@ -1,7 +1,11 @@
 import fs from "fs";
 import type { WAMessage } from "@whiskeysockets/baileys";
 import { ensureDirectoryExists } from "../utils/fsUtils";
-import { createBasePayload, buildTextMessage } from "../utils/payloadUtils";
+import {
+  createBasePayload,
+  buildTextMessage,
+  normalizeMessageTimestampToUnixSeconds,
+} from "../utils/payloadUtils";
 
 export function extractMessageText(message: WAMessage): string | null {
   const isGroup = message.key?.remoteJid?.includes("@g.us");
@@ -43,7 +47,7 @@ export function buildTextPayload(sessionName: string, message: WAMessage, text: 
     sessionName,
     wa_id,
     message.key?.id ?? "",
-    message.messageTimestamp?.toString(),
+    normalizeMessageTimestampToUnixSeconds(message.messageTimestamp),
     message.pushName ?? "",
     !!message.key.fromMe,
     undefined, // ppUrl
@@ -55,7 +59,7 @@ export function buildTextPayload(sessionName: string, message: WAMessage, text: 
     text,
     wa_id,
     message.key?.id ?? "",
-    message.messageTimestamp?.toString() || "",
+    normalizeMessageTimestampToUnixSeconds(message.messageTimestamp),
     !!message.key.fromMe,
     stanzaId
   );
