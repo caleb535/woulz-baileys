@@ -37,6 +37,7 @@
     "express": "^4.18.2",
     "file-type": "^21.0.0",
     "jimp": "^1.6.0",
+    "jsqr": "^1.4.0",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "reflect-metadata": "^0.2.2",
@@ -56,7 +57,10 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.6.2",
+    "run-script-webpack-plugin": "^0.2.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "webpack": "^5.105.4",
+    "webpack-node-externals": "^3.0.0"
   }
 }

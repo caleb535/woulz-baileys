@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Delete, Param, Body, Res, HttpStatus } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Param, Body, Res, HttpStatus, Logger } from "@nestjs/common";
 import { SessionService } from "./session.service";
 import { Response } from "express";
 
 @Controller("api")
 export class SessionController {
   constructor(private readonly sessionService: SessionService) { }
+  private readonly logger = new Logger(SessionController.name);
 
   @Post("session/:id")
   async createSession(
@@ -12,14 +13,25 @@ export class SessionController {
     @Body() body: { webhook?: string; workspaceID?: string; canalID?: string },
     @Res() res: Response
   ) {
+    if (this.sessionService.getSession(id)) {
+      this.logger.debug(`Session ${id} already exists, deleting...`);
+      this.sessionService.deleteSession(id);
+      this.sessionService.getSession(id);
+      if (this.sessionService.getSession(id)) {
+        this.logger.debug(`Session ${id} deleted`);
+      }
+    }
     try {
       this.sessionService.saveSessionConfig(id, body);
+      this.logger.debug(`Session ${id} config saved`);
       await this.sessionService.createSession(id);
+      this.sessionService.clearUser(id);
+      this.logger.debug(`Session ${id} created`);
       res
         .status(HttpStatus.OK)
         .json({ message: `Session ${id} created or recovered successfully.` });
     } catch (error) {
-      console.error(error);
+      this.logger.error(`Failed to create session ${id}: ${error}`);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: "Failed to create session" });
     }
   }
@@ -31,11 +43,13 @@ export class SessionController {
       return res.status(HttpStatus.NOT_FOUND).json({ error: "Session not found" });
     }
 
-    res.status(HttpStatus.OK).json({
+    const response = {
       session: id,
       connected: !!sock.user,
       user: sock.user || null,
-    });
+    };
+    this.logger.debug(`Session ${id} status: ${JSON.stringify(response)}`);
+    res.status(HttpStatus.OK).json(response);
   }
 
   @Get("sessions")

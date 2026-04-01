@@ -90,14 +90,11 @@ export class SessionService implements OnModuleInit {
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(path.join(this.sessionsDir, name));
-    this.logger.debug("Fetching latest WhatsApp web version");
-    const { version } = await fetchLatestWaWebVersion()
-    this.logger.debug(`Latest WhatsApp web version: ${version}`);
     const sock = makeWASocket({
       auth: state,
-      version,
       logger: P({ level: "silent" }) as any,
       getMessage: async () => undefined,
+      version: [2, 3000, 1033893291],
     });
 
     sock.ev.on("creds.update", saveCreds);
@@ -311,6 +308,13 @@ export class SessionService implements OnModuleInit {
 
   getSession(name: string): WASocket | undefined {
     return this.sessions.get(name);
+  }
+
+  clearUser(name: string): void {
+    const sock = this.sessions.get(name) as any;
+    if (sock) {
+      sock.user = null;
+    }
   }
 
   getAllSessions(): string[] {
